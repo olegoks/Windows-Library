@@ -25,7 +25,11 @@
 *.la
 *.a
 *.lib
-
+/Library
+/x64
+/TestsFormsLibrary
+/Debug
+/.vs
 # Executables
 *.exe
 *.out
