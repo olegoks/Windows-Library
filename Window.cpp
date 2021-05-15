@@ -1,349 +1,436 @@
+
 #include "Window.hpp"
-#include "Control.hpp"
+#include "EventBuilder.hpp"
+#include "HelpFunctions.hpp"
 
-#include "Event.hpp"
+namespace System {
 
-using namespace System;
-using namespace System::Windows;
+	LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM  wParam, LPARAM lParam);
 
-Window::Window() noexcept :
-	self_id_{ NULL },
-	parent_id_{ NULL },
-	class_name_{ },
-	handler_{ kDefaultEventHandler }{ }
+	Size Window::GetWndSizeWithThisClientSize(const Size& size, Style style, Style ex_style, bool menu){
 
-Window::Size System::Windows::Window::GetSize() const{
+		RECT rect{ 0, 0, (LONG)size.GetWidth(), (LONG)size.GetHeight() };
 
-	RECT rect{ 0 };
+		if (AdjustWindowRectEx(&rect, to_basic(style), menu, to_basic(ex_style))) {
 
-	if (GetWindowRect(self_id_, &rect)) {
-
-		return Size{ (__STD uint64_t)rect.right - rect.left, (__STD uint64_t)rect.bottom - rect.top };
-
-	}
-
-	throw Exception{ GetLastError() };
-
-}
-
-Window::Pos System::Windows::Window::GetPosition() const{
-
-	RECT rect{ 0 };
-
-	if (GetWindowRect(self_id_, &rect)) {
-
-		return Pos{ (__STD uint64_t)rect.left, (__STD uint64_t)rect.top };
-
-	}
-
-	throw Exception{ GetLastError() };
-	
-}
-
-__STD uint64_t System::Windows::Window::GetX() const{
-
-	RECT rect{ 0 };
-
-	if (GetWindowRect(self_id_, &rect)) {
-
-		return rect.left;
-
-	}
-
-	throw Exception{ GetLastError() };
-}
-
-__STD uint64_t System::Windows::Window::GetY() const{
-
-	RECT rect{ 0 };
-
-	if (GetWindowRect(self_id_, &rect)) {
-
-		return rect.top;
-
-	}
-
-	throw Exception{ GetLastError() };
-
-}
-
-void Window::RegisterWndClass(const __STD wstring_view& class_name) {
-
-	try {
-
-		if (!Core::WndClassRegistered(class_name)) {
-
-			Core::RegisterWndClass(class_name, WndProc);
+			return Size{ (__STD uint64_t)rect.right - rect.left, (__STD uint64_t)rect.bottom - rect.top };
 
 		}
 
-		class_name_ = class_name;
-
-	}
-	catch (const Core::Exception& error) {
-
-		throw Exception{ Exception::Type::ClassRegister, error.GetCode() };
+		throw Exception{ GetLastError() };
 
 	}
 
-}
+	bool Window::CallEventHandler(const Event& event) noexcept {
 
-void Window::CreateWnd(__STD wstring_view text, Id parent_wnd_id) {
-
-	CreateWnd(kDefaultStyle, kDefaultExStyle, text, kDefaultPosition, kDefaultSize, parent_wnd_id);
-
-}
-
-void Window::CreateWnd(Style style, ExStyle ex_style, Id parent_wnd_id) {
-
-	CreateWnd(style, ex_style, kDefaultText, kDefaultPosition, kDefaultSize, parent_wnd_id);
-
-}
-
-void Window::CreateWnd(Style style, __STD wstring_view text, Id parent_wnd_id) {
-
-	CreateWnd(style, ExStyle::Empty, text, kDefaultPosition, kDefaultSize, parent_wnd_id);
-
-}
-
-void Window::CreateWnd(Style style, __STD wstring_view text, const Position& pos, const Size& size, Id parent_wnd_id) {
-
-	CreateWnd(style, ExStyle::Empty, text, pos, size, parent_wnd_id);
-
-}
-
-void Window::CreateWnd(Style style, ExStyle ex_style, __STD wstring_view text, const Position& pos, const Size& size, Id parent_wnd_id) {
-
-	if (Window::Created())
-		throw Exception{ Exception::Type::WindowCreating };
-
-	//Creating new window
-	try {
-
-		self_id_ = Core::CreateWnd(
-			ex_style,
-			class_name_,
-			text,
-			style,
-			size,
-			pos,
-			parent_wnd_id,
-			(__STD uint64_t)this
-		);
-
-	}
-	catch (const Core::Exception& error) {
-
-		throw Exception{ Exception::Type::WindowCreating, error.GetCode() };
+		return handler_(event);
 
 	}
 
-	parent_id_ = parent_wnd_id;
+	Window::Window() noexcept :
+		self_id_{ NULL },
+		parent_id_{ NULL },
+		class_name_{ kDefaultClassName },
+		handler_{ kDefaultEventHandler }{ }
 
-	//Saving pointer of Window object to core window memory
-	try {
+	void Window::ShowRGBAImage(Pixel* image, Size size){
 
-		Core::SaveToWndMemory(self_id_, (__STD uint64_t)this);
+		BITMAPINFO info{ 0 };
+		info.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+		info.bmiHeader.biWidth = (int)size.GetWidth();
+		info.bmiHeader.biHeight = /*-*/(static_cast<int>(size.GetHeight()));
+		info.bmiHeader.biPlanes = 1;
+		info.bmiHeader.biBitCount = 32;
+		info.bmiHeader.biCompression = BI_RGB;
+		info.bmiHeader.biSizeImage = (DWORD)(((DWORD)size.GetWidth() * 24 + 31) & ~31) / 8 * (DWORD)size.GetHeight();
+
+		if (!SetDIBitsToDevice(
+			(HDC)dc_,
+			0,
+			0,
+			(int)GetWidth(),
+			(int)GetHeight(),
+			0,
+			0,
+			0,
+			(int)GetHeight(),
+			image,
+			&info,
+			DIB_PAL_COLORS
+		)) throw Exception{ GetLastError() };
 
 	}
-	catch (const Core::Exception& error) {
 
-		Core::DestroyWnd(self_id_);
+	bool Window::Enable() noexcept {
+
+		bool previos_state = EnableWindow((HWND)self_id_, true);
+		UpdateWindow((HWND)self_id_);
+
+		return previos_state;
+
+	}
+
+	bool Window::Disable() noexcept {
+
+		bool previos_state = EnableWindow((HWND)self_id_, false);
+		UpdateWindow((HWND)self_id_);
+
+		return previos_state;
+
+	}
+
+	Size Window::GetSize() const {
+
+		RECT rect{ 0 };
+
+		if (GetWindowRect(self_id_, &rect)) {
+
+			return Size{ (__STD uint64_t)rect.right - rect.left, (__STD uint64_t)rect.bottom - rect.top };
+
+		}
+
+		throw Exception{ GetLastError() };
+
+	}
+
+	Position Window::GetPosition() const {
+
+		RECT rect{ 0 };
+
+		if (GetWindowRect(self_id_, &rect)) {
+
+			return Position{ (__STD uint64_t)rect.left, (__STD uint64_t)rect.top };
+
+		}
+
+		throw Exception{ GetLastError() };
+
+	}
+
+	__STD uint64_t Window::GetX() const {
+
+		return Window::GetPosition().GetX();
+
+	}
+
+	__STD uint64_t Window::GetY() const {
+
+		return Window::GetPosition().GetY();
+
+	}
+
+	void Window::SetEventHandler(EventHandler handler) noexcept{
+		
+		handler_ = handler;
+
+	}
+
+	void Window::RegisterWndClass(const __STD wstring_view& class_name) {
+
+		WNDCLASSEX wc;
+
+		wc.cbSize = sizeof(wc);
+		wc.style = CS_HREDRAW | CS_VREDRAW;
+		wc.lpfnWndProc = WndProc;
+		wc.cbClsExtra = 0;
+		wc.cbWndExtra = sizeof(__STD uint64_t);
+		wc.hInstance = (HINSTANCE)GetModuleHandle(NULL);
+		wc.hIcon = NULL;//LoadIcon(NULL, IDI_APPLICATION);
+		wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+		wc.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
+		wc.lpszMenuName = NULL;
+		wc.lpszClassName = class_name.data();
+		wc.hIconSm = LoadIcon(NULL, IDI_APPLICATION);
+
+		if (!RegisterClassEx(&wc))
+			throw Exception{ GetLastError() };
+
+	}
+
+	void Window::CreateWnd(__STD wstring_view text, Id parent_wnd_id) {
+
+		CreateWnd(kDefaultStyle, kDefaultExStyle, text, kDefaultPosition, kDefaultSize, parent_wnd_id);
+
+	}
+
+	void Window::CreateWnd(Style style, ExStyle ex_style, Id parent_wnd_id) {
+
+		CreateWnd(style, ex_style, kDefaultText, kDefaultPosition, kDefaultSize, parent_wnd_id);
+
+	}
+
+	void Window::CreateWnd(Style style, __STD wstring_view text, Id parent_wnd_id) {
+
+		CreateWnd(style, ExStyle::Empty, text, kDefaultPosition, kDefaultSize, parent_wnd_id);
+
+	}
+
+	void Window::CreateWnd(Style style, __STD wstring_view text, const Position& pos, const Size& size, Id parent_wnd_id) {
+
+		CreateWnd(style, ExStyle::Empty, text, pos, size, parent_wnd_id);
+
+	}
+
+	void Window::CreateWnd(Style style, ExStyle ex_style, __STD wstring_view text, const Position& pos, const Size& size, Id parent_wnd_id) {
+
+		self_id_ = CreateWindowEx(to_basic(ex_style),
+			class_name_.data(),
+			text.data(),
+			to_basic(style),
+			(int)pos.GetX(),
+			(int)pos.GetY(),
+			(int)size.GetWidth(),
+			(int)size.GetHeight(),
+			(HWND)parent_wnd_id,
+			(HMENU)NULL,
+			(HINSTANCE)GetModuleHandle(NULL),
+			(LPVOID)this);
+
+		if (!self_id_) { throw Exception{ GetLastError() }; }
+
+		dc_ = GetDC(self_id_);
+
+		if (!dc_) { 
+			
+			Window::DestroyWnd();
+
+			throw Exception{ GetLastError() }; 
+		
+		}
+
+		//Saving pointer of Window object to core window memory
+		try {
+
+			ChangeWindowAttribute(self_id_, WindowAttribute::UserData, (__STD int64_t)this);
+
+		} catch (const Exception& error) {
+
+			Window::DestroyWnd();
+
+			throw Exception{ error.GetErrorCode() };
+
+		}
+
+		parent_id_ = parent_wnd_id;
+
+	}
+
+	void Window::ShowWnd() {
+
+		ShowWindow(self_id_, SW_SHOW);
+
+	}
+
+	void Window::DestroyWnd() {
+
+		if (!DestroyWindow(self_id_)) {
+
+			throw Exception{ GetLastError() };
+
+		}
 
 		self_id_ = NULL;
-
-		throw Exception{ Exception::Type::WindowCreating, error.GetCode() };
-
-	}
-
-}
-
-void Window::ShowWnd() {
-
-	Core::ShowWnd(self_id_);
-
-}
-
-void Window::DestroyWnd() {
-
-	Core::DestroyWnd(self_id_);
-
-}
-
-__forceinline void Window::SetEventHandler(EventHandler handler)noexcept {
-
-	handler_ = handler;
-
-}
-Window::~Window() noexcept {
-
-	try {
-
-		Core::DestroyWnd(self_id_);
-
-	}
-	catch (Core::Exception) {}
-
-}
-
-Window::Size Window::GetClientSize() const{
-
-	RECT rect{ 0 };
-
-	if (GetClientRect(self_id_, &rect)) {
-
-		return Size{ (__STD uint64_t)rect.right - rect.left, (__STD uint64_t)rect.bottom - rect.top };
+		DeleteDC(dc_);
 
 	}
 
-	throw Exception{ GetLastError() };
-}
+	Window::~Window() noexcept {
 
-__STD uint64_t System::Windows::Window::GetWidth() const{
+		try {
 
-	RECT rect{ 0 };
+			if (Window::Created()) {
 
-	if (GetWindowRect(self_id_, &rect)) {
+				DestroyWnd();
+			
+			}
 
-		return (__STD uint64_t)rect.right - rect.left;
+		} catch (Exception) {}
 
 	}
 
-	throw Exception{ Exception::Type::GettingWidth, GetLastError() };
+	Size Window::GetClientSize() const {
+
+		RECT rect{ 0 };
+
+		if (GetClientRect(self_id_, &rect)) {
+
+			return Size{ (__STD uint64_t)rect.right - rect.left, (__STD uint64_t)rect.bottom - rect.top };
+
+		}
+
+		throw Exception{ GetLastError() };
+
+	}
+
+	__STD uint64_t Window::GetWidth() const {
+
+		return Window::GetSize().GetWidth();
+
+	}
+
+	__STD uint64_t Window::GetHeight() const {
+
+		return Window::GetSize().GetHeight();
+
+	}
+
+	__STD wstring Window::GetText() const {
+
+		try {
+
+			const __STD uint64_t text_length = GetWindowTextLengthW((HWND)Window::GetId());
+
+			if (!text_length)return __STD wstring{ L"" };
+
+			auto buffer = __STD make_unique<wchar_t[]>(text_length + 1);
+
+			const int read_symbols_number = GetWindowTextW((HWND)GetId(), buffer.get(), (int)text_length + 1);
+
+			if (read_symbols_number) {
+
+				return __STD wstring{ buffer.get() };
+
+			}
+			//Error or empty string
+			else {
+
+				const DWORD error_code = GetLastError();
+
+				//Empty string -> error_code == NULL
+				if (!error_code) {
+
+					return __STD wstring{};
+
+				}
+
+				throw Exception{ error_code };
+
+			}
+
+
+		} catch (const __STD bad_alloc&) {
+
+			throw Exception{ ERROR_NOT_ENOUGH_MEMORY };
+
+		}
+
+	}
+
+	void Window::SetText(__STD wstring_view text){
+
+		if (!SetWindowTextW((HWND)Window::GetId(), text.data()) ){
+
+			throw Exception{ GetLastError() };
+
+		}
 	
-}
+	}
 
+	LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM  wParam, LPARAM lParam) {
 
+		static EventBuilder& builder = EventBuilder::GetInstance();
 
-__STD uint64_t System::Windows::Window::GetHeight() const{
+		const Window::Event& event = builder.ConstructEvent((HWND)hWnd, message, wParam, lParam);
+
+		const Window::Event::Action action = event.GetAction();
+
+		if (action == Window::Event::Action::Created) {
+
+			auto obj_ptr = (Window*)((CREATESTRUCT*)lParam)->lpCreateParams;
+
+			try {
+
+				ChangeWindowAttribute(hWnd, WindowAttribute::UserData, (__STD int64_t)obj_ptr);
+
+			} catch (const System::Exception& error) {
+
+				exit(error.GetErrorCode());
+
+			}
+
+		}
+
+		const IEvent::Source source = event.GetSource();
+		Window::Id window_id = NULL;
+		
+		if (source == IEvent::Source::Window) {
+
+			window_id = hWnd;
+
+		//Control window
+		} else {
+
+			window_id = (Window::Id)lParam;
+
+		}
+
+		try {
+			
+			auto window = (Window*)GetWindowAttribute(hWnd, WindowAttribute::UserData);
+		
+			const bool event_processed = window->CallEventHandler(event);
+
+			if (event_processed) return 0;
+
+			switch (action) {
+
+			case Window::Event::Action::Close:
+				window->Destroy();
+				break;
+
+			case Window::Event::Action::CloseAppplication:
+				Core::QuitFromMainLoop(0);
+				break;
+
+			}
+
+		}
+		catch (const System::Exception& error) {
+
+			if (action == Window::Event::Action::Created || action == Window::Event::Action::Close) {
+
+				throw Exception{ error.GetErrorCode() };
+
+			}
+
+		};
+
+		return DefWindowProcW((HWND)hWnd, message, wParam, lParam);
+
+	}
+
+	Exception::Exception(ErrorCode code)noexcept :
+		exception::exception{ },
+		code_{ code } { }
+
+	Exception::ErrorCode Exception::GetErrorCode()const noexcept { 
+		
+		return code_; 
 	
-	RECT rect{ 0 };
+	}
 
-	if (GetWindowRect(self_id_, &rect)) {
+	__STD uint64_t Window::Event::GetMouseX() const noexcept {
 
-		return (__STD uint64_t)rect.bottom - rect.top;
+		return LOWORD(lParam_);
 
 	}
 
-	throw Exception{ Exception::Type::GettingHeight, GetLastError() };
-}
+	__STD uint64_t Window::Event::GetMouseY() const noexcept{
 
-__forceinline Window::Id Window::GetId()const noexcept {
+		return HIWORD(lParam_);
+	
+	}
 
-	return self_id_;
+	Window& Window::Event::GetWindow() const noexcept {
 
-}
-
-__forceinline bool Window::Created() const noexcept {
-
-	return self_id_;
-}
-
-__forceinline bool Window::CallEventHandler(const IEvent* event)noexcept {
-
-	return handler_(event);
-}
-
-LRESULT CALLBACK Window::WndProc(HWND hWnd, UINT message, WPARAM  wParam, LPARAM lParam) {
-
-	static EventBuilder* builder = nullptr;
-
-	if (builder == nullptr) {
-
-		builder = EventBuilder::GetInstance();
+		return *reinterpret_cast<Window*>(GetWindowAttribute(hWnd_, WindowAttribute::UserData));
 
 	}
 
-	IEvent* event = builder->ConstructEvent(hWnd, message, wParam, lParam);
-
-	const IEvent::Source source = event->GetSource();
-	const IEvent::Action action = event->GetAction();
-
-	if (action == IEvent::Action::Created) {
-
-		auto obj_ptr = (Core::WndCreateData*)event->GetCreateDataPointer();
-
-		try {
-
-			Core::SaveToWndMemory(hWnd, obj_ptr->GetAdditionalData());
-
-		}
-		catch (const Core::Exception& error) {
-
-			exit(error.GetCode());
-
-		}
-
+	Window::Event::Action Window::Event::GetAction()const noexcept { 
+		
+		return System::to_enum_type<Action>(message_); 
+	
 	}
 
-	bool event_processed = false;
-
-	switch (source) {
-	case IEvent::Source::Window: {
-
-		try {
-
-			auto window = (Window*)Core::GetWndMemory(hWnd);
-
-			event_processed = window->CallEventHandler(event);
-
-		}
-		catch (Core::Exception) {}
-
-		break;
-	}
-
-	case IEvent::Source::Control: {
-
-		try {
-
-			auto control = (Control*)Core::GetWndMemory((Control::Id)lParam);
-
-			event_processed = control->CallEventHandler(event);
-
-		}
-		catch (Core::Exception) {}
-
-		break;
-	}
-	};
-
-	if (event_processed) return 0;
-
-	switch (action) {
-
-	case IEvent::Action::Close:
-		Core::DestroyWnd(hWnd);
-		break;
-
-	case IEvent::Action::CloseAppplication:
-		Core::QuitFromMainLoop(0);
-		break;
-
-	}
-
-	return DefWindowProc(hWnd, message, wParam, lParam);
-
-}
-
-Window::Exception::Exception(Type type, ErrorCode code)noexcept :
-	type_{ type },
-	code_{ code } { }
-
-Window::Exception::Exception(Type type)noexcept :
-	Exception::Exception{ type, NULL } { }
-
-Window::Exception::Exception(ErrorCode code)noexcept :
-	Exception::Exception{ Type::Empty , code } { }
-
-__forceinline Window::Exception::ErrorCode Window::Exception::GetErrorCode()const noexcept {
-
-	return code_;
-
-}
-
-const __STD string_view& Window::Exception::What()const noexcept {
-
-	return messages_[to_basic(type_)];
-
-}
+};

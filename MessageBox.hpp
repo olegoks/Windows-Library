@@ -1,121 +1,72 @@
 #pragma once
 
-#include "Basic.hpp"
 #include "Window.hpp"
 
-namespace System::Windows {
+#undef MessageBox
+namespace System {
 
-		class MsgBox final {
-		private:
-		public:
+	class EXPIMP MessageBox final {
+	public:
 
-			class Exception final : __STD exception {
-			public:
+		using Style = UINT;
 
-				using ErrorCode = DWORD;
+		enum class Type : Style {
 
-			private:
+			//The message box contains three push buttons : Cancel, Try Again, Continue.
+			CancelTryAgainContinue = 0x00000006L,//MB_CANCELTRYCONTINUE,
 
-				ErrorCode code_;
+			//Adds a Help button to the message box.When the user clicks the Help button or presses F1, the system sends a WM_HELP message to the owner.
+			Help = 0x00004000L,//MB_HELP,
 
-			public:
+			//The message box contains one push button : OK.This is the default.
+			Ok = 0x00000000L,//MB_OK,
 
-				explicit Exception(ErrorCode code)noexcept :
-					code_{ code } {  }
-
-				__forceinline ErrorCode GetCode()const noexcept {
-
-					return code_;
-
-				}
-
-			};
-
-			enum class Style : UINT {};
-
-			enum class Type : UINT {
-
-				//The message box contains three push buttons : Cancel, Try Again, Continue.
-				CancelTryAgainContinue = MB_CANCELTRYCONTINUE,
-
-				//Adds a Help button to the message box.When the user clicks the Help button or presses F1, the system sends a WM_HELP message to the owner.
-				Help = MB_HELP,
-
-				//The message box contains one push button : OK.This is the default.
-				Ok = MB_OK,
-
-				//The message box contains two push buttons : OK and Cancel.
-				OkCancel = MB_OKCANCEL,
-				RetryCancel = MB_RETRYCANCEL,
-				YesNo = MB_YESNO,
-				YesNoCancel = MB_YESNOCANCEL
-
-			};
-
-			enum class Icon : UINT {
-
-				//An exclamation - point icon appears in the message box.
-				Exclamation = MB_ICONEXCLAMATION,
-				Warning = MB_ICONWARNING,
-				Information = MB_ICONINFORMATION,
-				Asterisk = MB_ICONASTERISK,
-				Question = MB_ICONQUESTION
-
-			};
-
-			enum class Result : int {
-
-				//The Abort button was selected.
-				AbortSelected = IDABORT,
-
-				//The Cancel button was selected.
-				CancelSelected = IDCANCEL,
-
-				//The Continue button was selected.
-				ContinueSelected = IDCONTINUE,
-				IgnoreSelected = IDIGNORE,
-				NoSelected = IDNO,
-				YesSelected = IDYES,
-				OkSelected = IDOK,
-				RetrySelected = IDRETRY,
-				TryAgainSelected = IDTRYAGAIN
-
-
-			};
-
-			static Result Show(Window::Id parent_id, __STD string_view text, __STD string_view caption, Style style)noexcept {
-
-				const int result = MessageBoxA(parent_id, text.data(), caption.data(), to_basic(style));
-
-				if (!result) {
-
-					throw Exception{ GetLastError() };
-
-				}
-
-				return to_enum_type<Result>(result);
-
-			};
-
-			__forceinline static Result Show(Window::Id parent_id, __STD string_view text, __STD string_view caption, Type type)noexcept {
-				
-				return Show(parent_id, text, caption, to_enum_type<Style>(type));
-
-			}
+			//The message box contains two push buttons : OK and Cancel.
+			OkCancel = 0x00000001L,//MB_OKCANCEL,
+			RetryCancel = 0x00000005L,//MB_RETRYCANCEL,
+			YesNo = 0x00000004L,//MB_YESNO,
+			YesNoCancel = 0x00000003L,//MB_YESNOCANCEL
 
 		};
 
+		enum class Icon : Style {
 
-		constexpr MsgBox::Style operator|(MsgBox::Type style, MsgBox::Icon icon)noexcept {
+			//An exclamation - point icon appears in the message box.
+			Exclamation = 0x00000030L,//MB_ICONEXCLAMATION,
+			Warning = 0x00000030L,//MB_ICONWARNING,
+			Information = 0x00000040L,//MB_ICONINFORMATION,
+			Asterisk = 0x00000040L,//MB_ICONASTERISK,
+			Question = 0x00000020L//MB_ICONQUESTION
 
-			return to_enum_type<MsgBox::Style>(to_basic(style) | to_basic(icon));
+		};
 
-		}
+		enum class Result : int {
 
-		constexpr  MsgBox::Style operator|(MsgBox::Icon icon, MsgBox::Type style)noexcept {
+			//The Abort button was selected.
+			AbortSelected = 3,//IDABORT,
 
-			return to_enum_type< MsgBox::Style>(to_basic(style) | to_basic(icon));
+			//The Cancel button was selected.
+			CancelSelected = 2,//IDCANCEL,
 
-		}
+			//The Continue button was selected.
+			ContinueSelected = 11,//IDCONTINUE,
+			IgnoreSelected = 5, //IDIGNORE,
+			NoSelected = 7,//IDNO,
+			YesSelected = 6,//IDYES,
+			OkSelected = 1,//IDOK,
+			RetrySelected = 4,//IDRETRY,
+			TryAgainSelected = 10//IDTRYAGAIN
+
+		};
+
+		static Result Show(Window::Id parent_id, __STD string_view text, __STD string_view caption, Style style);
+		static Result Show(Window::Id parent_id, __STD string_view text, __STD string_view caption, Type type);
+
+	};
+
+	using MsgBox = MessageBox;
+
+	constexpr EXPIMP MsgBox::Style operator|(MsgBox::Type style, MsgBox::Icon icon)noexcept;
+	constexpr EXPIMP MsgBox::Style operator|(MsgBox::Icon icon, MsgBox::Type style)noexcept;
 
 }

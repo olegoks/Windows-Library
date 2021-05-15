@@ -1,23 +1,51 @@
-#include "Core.hpp"
 
-using namespace System;
+#include "Window.hpp"
 
-Core::Exception::Exception(ErrorCode code)noexcept :
-	code_{ code } { }
+namespace System {
 
-__forceinline Core::Exception::ErrorCode Core::Exception::GetCode()const noexcept {
+	__STD uint64_t Core::GetScreenWidth()noexcept {
 
-	return code_;
+		return GetSystemMetrics(SM_CXSCREEN);
+
+	}
+
+	__STD uint64_t Core::GetScreenHeight()noexcept {
+
+		return GetSystemMetrics(SM_CYSCREEN);
+
+	}
+
+	void Core::StartMainLoop()noexcept {
+
+		MSG message{ 0 };
+		BOOL no_error = 0;
+
+		while ((no_error = GetMessage(&message, NULL, NULL, NULL)) != 0) {
+
+			TranslateMessage(&message);
+
+			//Call WinProc function and get MSG msg message
+			DispatchMessage(&message);
+
+		}
+
+	};
+
+	void Core::SetSystemDPI() {
+
+		if (!SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_SYSTEM_AWARE)) {
+
+			throw Exception{ GetLastError() };
+
+		}
+
+	}
+
+	//Sends WM_QUIT to the message queue and GetMessage returns zero
+	void Core::QuitFromMainLoop(int exit_code)noexcept {
+
+		PostQuitMessage(exit_code);
+
+	}
+
 }
-
-Core::Size::Size(__STD uint64_t width, __STD uint64_t height)noexcept :
-	width_{ width }, height_{ height }{  }
-
-__forceinline __STD uint64_t Core::Size::Width()const noexcept { return width_; }
-__forceinline __STD uint64_t Core::Size::Height()const noexcept { return height_; }
-
-Core::Position::Position(__STD uint64_t x, __STD uint64_t y)noexcept :
-	x_{ x }, y_{ y }{  }
-
-__forceinline __STD uint64_t  Core::Position::X()const noexcept { return x_; }
-__forceinline __STD uint64_t  Core::Position::Y()const noexcept { return y_; }

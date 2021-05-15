@@ -4,22 +4,30 @@
 #define PIXEL_HPP
 
 #include <cstdint>
-#include "Basic.hpp"
+
+#define COMPILEDLL
+
+#ifdef COMPILEDLL
+#define EXPIMP __declspec(dllexport)
+#else 
+#define EXPIMP __declspec(dllimport)
+#endif
+
 #define __STD ::std::
 
-class EXPIMP Pixel final {
+class EXPIMP Pixel  {
 public:
 
 	union rgba {
 
-		uint8_t bgra[4];
+		__STD uint8_t bgra[4];
 
 		struct {
 
-			uint8_t b;
-			uint8_t g;
-			uint8_t r;
-			uint8_t a;
+			__STD uint8_t b;
+			__STD uint8_t g;
+			__STD uint8_t r;
+			__STD uint8_t a;
 
 		};
 
@@ -27,15 +35,12 @@ public:
 
 	rgba rgba_ = { 0 };
 
-
-
-	explicit Pixel(uint8_t r, uint8_t g, uint8_t b)noexcept;
+	constexpr explicit Pixel(__STD uint8_t r, __STD uint8_t g, __STD uint8_t b)noexcept;
 
 	explicit Pixel()noexcept;
 
 	explicit Pixel(const Pixel& copy_pixel) = default;
 	explicit Pixel(Pixel&& move_pixel)noexcept;
-
 
 	Pixel& operator=(Pixel&& move_pixel)noexcept;
 	Pixel& operator=(const Pixel& copy_pixel) = default;

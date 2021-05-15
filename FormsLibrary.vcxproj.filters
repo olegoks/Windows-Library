@@ -7,17 +7,11 @@
     <Filter Include="Pixel">
       <UniqueIdentifier>{4d9df87e-8e49-4090-8c84-3af45907ad2d}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Basic">
-      <UniqueIdentifier>{8a3fb329-fa91-4f71-9e95-beba0ecb92d0}</UniqueIdentifier>
-    </Filter>
     <Filter Include="MessageBox">
       <UniqueIdentifier>{aa7776ec-be64-41a5-95da-08353ca3b0b6}</UniqueIdentifier>
     </Filter>
     <Filter Include="Window">
       <UniqueIdentifier>{833bd858-eef7-447d-8000-c8810bf1f6e7}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Core">
-      <UniqueIdentifier>{d212c1a2-457a-4743-9ceb-34c8bab86033}</UniqueIdentifier>
     </Filter>
     <Filter Include="Control">
       <UniqueIdentifier>{0cd8e2e9-b178-4bb2-a3ef-3b0378e3837f}</UniqueIdentifier>
@@ -30,33 +24,22 @@
     <ClInclude Include="Pixel.hpp">
       <Filter>Pixel</Filter>
     </ClInclude>
-    <ClInclude Include="Basic.hpp">
-      <Filter>Basic</Filter>
-    </ClInclude>
-    <ClInclude Include="Core.hpp">
-      <Filter>Core</Filter>
-    </ClInclude>
     <ClInclude Include="Window.hpp">
       <Filter>Window</Filter>
-    </ClInclude>
-    <ClInclude Include="MessageBox.hpp">
-      <Filter>MessageBox</Filter>
-    </ClInclude>
-    <ClInclude Include="Button.hpp">
-      <Filter>Control</Filter>
     </ClInclude>
     <ClInclude Include="Control.hpp">
       <Filter>Control</Filter>
     </ClInclude>
-    <ClInclude Include="Static.hpp">
+    <ClInclude Include="EventBuilder.hpp">
+      <Filter>Event</Filter>
+    </ClInclude>
+    <ClInclude Include="Controls.hpp">
       <Filter>Control</Filter>
     </ClInclude>
-    <ClInclude Include="ProgressBar.hpp">
-      <Filter>Control</Filter>
+    <ClInclude Include="MessageBox.hpp">
+      <Filter>MessageBox</Filter>
     </ClInclude>
-    <ClInclude Include="Edit.hpp">
-      <Filter>Control</Filter>
-    </ClInclude>
+    <ClInclude Include="HelpFunctions.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Pixel.cpp">
@@ -65,8 +48,12 @@
     <ClCompile Include="Window.cpp">
       <Filter>Window</Filter>
     </ClCompile>
-    <ClCompile Include="Core.cpp">
-      <Filter>Core</Filter>
+    <ClCompile Include="MessageBox.cpp">
+      <Filter>MessageBox</Filter>
     </ClCompile>
+    <ClCompile Include="Control.cpp" />
+    <ClCompile Include="HelpFunctions.cpp" />
+    <ClCompile Include="Core.cpp" />
+    <ClCompile Include="Controls.cpp" />
   </ItemGroup>
 </Project>

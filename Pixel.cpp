@@ -2,7 +2,7 @@
 
 #include <utility>
 
-Pixel::Pixel(uint8_t r, uint8_t g, uint8_t b)noexcept:
+constexpr Pixel::Pixel(__STD uint8_t r, __STD uint8_t g, __STD uint8_t b)noexcept:
 	rgba_{ 0 } {
 
 	rgba_.r = r;

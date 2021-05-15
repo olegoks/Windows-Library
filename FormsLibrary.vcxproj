@@ -123,6 +123,8 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>D:\C++\FormsLibrary\x64\Debug;D:\C++\Core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -138,6 +140,8 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>D:\C++\FormsLibrary\x64\Debug;D:\C++\Core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -147,20 +151,21 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="Basic.hpp" />
-    <ClInclude Include="Button.hpp" />
     <ClInclude Include="Control.hpp" />
-    <ClInclude Include="Edit.hpp" />
+    <ClInclude Include="Controls.hpp" />
     <ClInclude Include="Event.hpp" />
+    <ClInclude Include="EventBuilder.hpp" />
+    <ClInclude Include="HelpFunctions.hpp" />
     <ClInclude Include="MessageBox.hpp" />
-    <ClInclude Include="ProgressBar.hpp" />
-    <ClInclude Include="Static.hpp" />
     <ClInclude Include="Window.hpp" />
     <ClInclude Include="Pixel.hpp" />
-    <ClInclude Include="Core.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Control.cpp" />
+    <ClCompile Include="Controls.cpp" />
     <ClCompile Include="Core.cpp" />
+    <ClCompile Include="HelpFunctions.cpp" />
+    <ClCompile Include="MessageBox.cpp" />
     <ClCompile Include="Window.cpp" />
     <ClCompile Include="Pixel.cpp" />
   </ItemGroup>
